@@ -1,0 +1,42 @@
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #f4f6f9;
+  color: #2b3445;
+}
+
+.card-kpi {
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.nav-pills .nav-link {
+  color: #6c757d;
+  font-weight: 600;
+  padding: 8px 18px;
+}
+
+.nav-pills .nav-link.active {
+  background-color: #0d6efd;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(13, 110, 253, 0.25);
+}
+
+.table-custom {
+  font-size: 0.88rem;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-custom thead th {
+  background-color: #1e293b;
+  color: #ffffff;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  padding: 12px;
+}
+
+.table-custom tbody tr:hover {
+  background-color: #f1f5f9;
+}
