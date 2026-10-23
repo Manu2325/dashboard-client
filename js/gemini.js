@@ -10,18 +10,16 @@ async function askGemini() {
   const promptText = input.value.trim();
   if (!promptText) return;
   
-  // 1. Extraer KPIs Generales del Dashboard
+  // Extraer contexto del Dashboard
   const totalCalls = document.getElementById('kpiTotalCalls')?.innerText || '--';
   const rpcCalls = document.getElementById('kpiRpc')?.innerText || '--';
   const ptpCommitments = document.getElementById('kpiPtp')?.innerText || '--';
   const avgConversion = document.getElementById('kpiConversion')?.innerText || '--';
 
-  // 2. Extraer texto visible de la pestaña de Agent Performance
   const agentContainer = document.getElementById('agentTableContainer');
   let agentContextData = '';
   if (agentContainer) {
-    // Captura el texto con el desglose de métricas por agente
-    agentContextData = agentContainer.innerText.slice(0, 3000); // Límite para no saturar el prompt
+    agentContextData = agentContainer.innerText.slice(0, 3000);
   }
 
   const liveContext = `
@@ -31,13 +29,12 @@ async function askGemini() {
     - PTP Commitments: ${ptpCommitments}
     - Average Conversion Rate: ${avgConversion}
 
-    [AGENT PERFORMANCE BREAKDOWN DATA]:
+    [AGENT PERFORMANCE DATA]:
     ${agentContextData}
 
-    SYSTEM INSTRUCTION: Always respond in professional executive English. Provide concise and clear data insights for management regarding agents and LOBs.
+    SYSTEM INSTRUCTION: Always respond in professional executive English. Provide concise operational data insights.
   `;
 
-  // Mostrar spinner de carga
   responseBox.innerHTML = `
     <div class="d-flex align-items-center text-primary">
       <div class="spinner-border spinner-border-sm me-2" role="status"></div>
@@ -58,14 +55,22 @@ async function askGemini() {
     const data = await res.json();
 
     if (!res.ok) {
-      // Si la API devuelve un error 500 con detalles
-      const errDetails = data.details?.error?.message || data.error || `HTTP ${res.status}`;
-      responseBox.innerHTML = `
-        <div class="alert alert-danger mb-0 small">
-          <i class="fa-solid fa-triangle-exclamation me-1"></i>
-          <strong>API Error (${res.status}):</strong> ${errDetails}
-        </div>
-      `;
+      if (res.status === 503 || res.status === 429) {
+        responseBox.innerHTML = `
+          <div class="alert alert-warning mb-0 border-0 shadow-sm p-3">
+            <h6 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-server me-2 text-warning"></i>High Demand on AI Provider</h6>
+            <p class="small text-muted mb-0">Google's Gemini servers are currently experiencing peak global traffic. The system automatically retried across back-up models, but traffic remains high. Please try your request again in a few moments.</p>
+          </div>
+        `;
+      } else {
+        const errMsg = data.details?.data?.error?.message || data.error || `HTTP Status ${res.status}`;
+        responseBox.innerHTML = `
+          <div class="alert alert-danger mb-0 small">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i>
+            <strong>API Status (${res.status}):</strong> ${errMsg}
+          </div>
+        `;
+      }
       return;
     }
     
@@ -77,6 +82,6 @@ async function askGemini() {
     }
   } catch (err) {
     console.error('Error connecting to Gemini API endpoint:', err);
-    responseBox.innerHTML = `<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> Connection error with /api/gemini endpoint.</span>`;
+    responseBox.innerHTML = `<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> Connection error with serverless endpoint.</span>`;
   }
 }
