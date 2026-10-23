@@ -13,7 +13,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usamos la versión exacta que solicita la API en tu proyecto
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`,
       {
