@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usamos el modelo activo gemini-2.5-flash en la versión v1beta
+    // Usamos el modelo gemini-2.5-flash en la versión v1beta oficial
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
