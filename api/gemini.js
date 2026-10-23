@@ -12,44 +12,34 @@ export default async function handler(req, res) {
     });
   }
 
-  // Lista de modelos ordenados por prioridad/disponibilidad para fallback automático
-  const modelCandidates = [
-    { version: 'v1beta', name: 'gemini-1.5-flash' },
-    { version: 'v1beta', name: 'gemini-1.5-pro' },
-    { version: 'v1', name: 'gemini-1.5-flash' }
-  ];
-
-  let lastErrorDetails = null;
-
-  for (const model of modelCandidates) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/${model.version}/models/${model.name}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        return res.status(200).json(data);
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
       }
+    );
 
-      lastErrorDetails = { status: response.status, data };
-      console.warn(`Model ${model.name} failed (${response.status}). Trying next fallback...`);
-    } catch (err) {
-      lastErrorDetails = { status: 500, message: err.message };
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Google API Error:', data);
+      return res.status(response.status).json({ 
+        error: 'Google Gemini API Rejected Request', 
+        details: data 
+      });
     }
-  }
 
-  // Si todos los modelos fallaron por demanda alta (503) u otros motivos
-  return res.status(lastErrorDetails?.status || 500).json({
-    error: 'Google Gemini Service High Demand',
-    details: lastErrorDetails
-  });
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error('Serverless Execution Error:', error);
+    return res.status(500).json({ 
+      error: 'Failed to communicate with Gemini API', 
+      details: error.message 
+    });
+  }
 }
