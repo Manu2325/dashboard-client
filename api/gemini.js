@@ -13,9 +13,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usamos el modelo gemini-2.5-flash en la versión v1beta oficial
+    // Usamos la versión exacta que solicita la API en tu proyecto
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
