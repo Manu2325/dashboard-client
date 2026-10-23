@@ -186,3 +186,35 @@ body {
 .row-earthlink:hover > td {
   background-color: #b6d4fe !important;
 }
+
+/* Badging / Formato Condicional para Métricas (RPC % y Conversion %) */
+.badge-kpi {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 6px;
+  text-align: center;
+  min-width: 60px;
+}
+
+/* Verde: Excedió meta */
+.badge-kpi-green {
+  background-color: #d1e7dd !important;
+  color: #0f5132 !important;
+  border: 1px solid #a3cfbb;
+}
+
+/* Amarillo: En rango medio */
+.badge-kpi-yellow {
+  background-color: #fff3cd !important;
+  color: #664d03 !important;
+  border: 1px solid #ffe69c;
+}
+
+/* Rojo: Bajo meta */
+.badge-kpi-red {
+  background-color: #f8d7da !important;
+  color: #842029 !important;
+  border: 1px solid #f5c2c7;
+}

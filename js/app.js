@@ -18,10 +18,10 @@ async function fetchDashboardData() {
     const data = await response.json();
     console.log("¡Datos en vivo recibidos!", data);
 
-    // 1. Renderizar pestaña Executive Summary con resueltos de color
+    // 1. Renderizar pestaña Executive Summary con resueltos de color y formatos condicionales
     renderSummaryTable(data.summaryData, 'summaryTableContainer');
     
-    // 2. Renderizar pestaña Agent Performance con resueltos de color por agente
+    // 2. Renderizar pestaña Agent Performance con formatos condicionales por agente
     renderAgentPerformanceTable(data.agentData, 'agentTableContainer');
     
     // 3. Renderizar pestaña Skills
@@ -50,7 +50,48 @@ function getLobRowClass(lobName) {
   return '';
 }
 
-// Renderizado Executive Summary con colores dinámicos
+// FORMATO CONDICIONAL PARA RPC %
+function formatRpcPercent(valStr) {
+  if (!valStr || valStr === '--') return valStr;
+  const num = parseFloat(valStr.toString().replace('%', '').trim());
+  if (isNaN(num)) return valStr;
+
+  let colorClass = '';
+  if (num >= 30) colorClass = 'badge-kpi-green';
+  else if (num >= 15) colorClass = 'badge-kpi-yellow';
+  else colorClass = 'badge-kpi-red';
+
+  return `<span class="badge-kpi ${colorClass}">${valStr}</span>`;
+}
+
+// FORMATO CONDICIONAL PARA CONVERSION RATE %
+function formatConversionPercent(lobName, valStr) {
+  if (!valStr || valStr === '--') return valStr;
+  const num = parseFloat(valStr.toString().replace('%', '').trim());
+  if (isNaN(num)) return valStr;
+
+  const lob = (lobName || '').toString().toUpperCase().trim();
+  const isCrc = lob === 'CRC';
+
+  let colorClass = '';
+  
+  if (isCrc) {
+    // Reglas para CRC: > 50% verde, 20-49% amarillo, 0-19% rojo
+    if (num >= 50) colorClass = 'badge-kpi-green';
+    else if (num >= 20) colorClass = 'badge-kpi-yellow';
+    else colorClass = 'badge-kpi-red';
+  } else {
+    // Reglas para CRCC, EQ_EARTHLINK, EARTHLINK, OPTIMUM, YENDO, Agentes
+    // > 40% verde, 20-39% amarillo, 0-19% rojo
+    if (num >= 40) colorClass = 'badge-kpi-green';
+    else if (num >= 20) colorClass = 'badge-kpi-yellow';
+    else colorClass = 'badge-kpi-red';
+  }
+
+  return `<span class="badge-kpi ${colorClass}">${valStr}</span>`;
+}
+
+// Renderizado Executive Summary con colores dinámicos y formato condicional
 function renderSummaryTable(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
@@ -121,20 +162,30 @@ function renderSummaryTable(grid, containerId) {
       return;
     }
 
-    // 3. FILAS DE DATOS CON COLORES ESPECÍFICOS
+    // 3. FILAS DE DATOS CON FORMATO CONDICIONAL
     if (inTable) {
       const firstColText = mainTitleCell.toLowerCase();
       const isExactTotalRow = firstColText === 'total portfolio' || firstColText === 'total agent calls';
       
-      // Determinar clase según Total o LOB
       let rowClass = isExactTotalRow ? 'fw-bold table-light' : getLobRowClass(mainTitleCell);
 
       const mainDataCells = cleanRow.slice(0, 10);
 
       html += `<tr class="${rowClass}">`;
-      mainDataCells.forEach(cell => {
+      mainDataCells.forEach((cell, idx) => {
         if (cell !== undefined) {
-          html += `<td>${cell !== null ? cell : ''}</td>`;
+          let cellValue = cell !== null ? cell : '';
+          
+          // Aplicar formato condicional solo en columnas RPC % (índice 5) y Conversion % (índice 7)
+          if (!isExactTotalRow) {
+            if (idx === 5) { // RPC %
+              cellValue = formatRpcPercent(cellValue);
+            } else if (idx === 7) { // Conversion Rate %
+              cellValue = formatConversionPercent(mainTitleCell, cellValue);
+            }
+          }
+
+          html += `<td>${cellValue}</td>`;
         }
       });
       html += '</tr>';
@@ -148,7 +199,7 @@ function renderSummaryTable(grid, containerId) {
   container.innerHTML = html;
 }
 
-// Renderizado Agent Performance con colores individuales por LOB en ambas tablas
+// Renderizado Agent Performance con formato condicional por LOB en subtablas
 function renderAgentPerformanceTable(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
@@ -187,7 +238,17 @@ function renderAgentPerformanceTable(grid, containerId) {
       
       html += `<tr class="${rowClass}">`;
       for (let i = 0; i < 9; i++) {
-        const val = r[i] !== undefined && r[i] !== null ? r[i] : '';
+        let val = r[i] !== undefined && r[i] !== null ? r[i] : '';
+
+        // Formatos condicionales para subtabla izquierda
+        if (!isTotal) {
+          if (i === 5) { // RPC %
+            val = formatRpcPercent(val);
+          } else if (i === 7) { // Conversion Rate %
+            val = formatConversionPercent(lobName, val);
+          }
+        }
+
         html += `<td>${val}</td>`;
       }
       html += `</tr>`;
