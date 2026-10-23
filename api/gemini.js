@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Permitir únicamente peticiones POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -14,9 +13,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usamos el endpoint oficial de Gemini v1beta con gemini-1.5-flash
+    // Usamos el modelo activo gemini-2.5-flash en la versión v1beta
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
