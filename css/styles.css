@@ -7,6 +7,25 @@ body {
 .card-kpi {
   border-radius: 12px;
   background: #ffffff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06) !important;
+}
+
+.card-kpi h3 {
+  font-size: 1.85rem;
+  font-weight: 800 !important;
+  letter-spacing: -0.5px;
+  color: #0f172a !important;
+}
+
+.card-kpi span {
+  font-size: 0.75rem;
+  letter-spacing: 0.8px;
+  color: #64748b;
 }
 
 .nav-pills .nav-link {
@@ -39,4 +58,131 @@ body {
 
 .table-custom tbody tr:hover {
   background-color: #f1f5f9;
+}
+
+/* Banners de sección principales */
+.section-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Badges modernos para cada Agente */
+.agent-title-badge {
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2);
+  display: flex;
+  align-items: center;
+}
+
+/* Tablas estilizadas */
+.table-custom-wrapper {
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.table-custom thead {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+.table-custom th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 12px;
+  font-weight: 700;
+  border: none;
+}
+
+/* Tarjetas Futuristas de Agent Skills */
+.skill-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+/* Efecto de elevación e iluminación al pasar el ratón sobre la tarjeta del agente */
+.skill-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 24px rgba(13, 110, 253, 0.12) !important;
+  border-color: #93c5fd;
+}
+
+/* Badges interactivos para cada Skill individual */
+.skill-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #334155;
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin: 3px 4px;
+  border: 1px solid #cbd5e1;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+/* Efecto de relieve 3D y brillo cuando pasas el ratón DIRECTO sobre una Skill */
+.skill-badge:hover {
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  color: #ffffff;
+  transform: translateY(-3px) scale(1.08);
+  box-shadow: 0 6px 15px rgba(13, 110, 253, 0.35);
+  border-color: #0d6efd;
+}
+
+/* Colores dinámicos para LOBs específicas con forzado de prioridad */
+
+/* EQ_EARTHLINK -> Verde claro pastel */
+.row-eq-earthlink, 
+.row-eq-earthlink > td {
+  background-color: #d1e7dd !important; /* Verde pastel suave */
+  color: #0f5132 !important;
+  font-weight: 600 !important;
+}
+
+.row-eq-earthlink:hover, 
+.row-eq-earthlink:hover > td {
+  background-color: #c1e1d2 !important;
+}
+
+/* EARTHLINK / EARTHLINK (1st Party) -> Azul claro pastel */
+.row-earthlink, 
+.row-earthlink > td {
+  background-color: #cfe2ff !important; /* Azul pastel suave */
+  color: #084298 !important;
+  font-weight: 600 !important;
+}
+
+.row-earthlink:hover, 
+.row-earthlink:hover > td {
+  background-color: #b6d4fe !important;
 }

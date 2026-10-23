@@ -1,13 +1,14 @@
 export default async function handler(req, res) {
+  // Allow POST requests only
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { prompt } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY; // Toma la clave oculta de Vercel
+  const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'Falta la API Key en el servidor' });
+    return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is not configured.' });
   }
 
   try {
@@ -22,6 +23,6 @@ export default async function handler(req, res) {
     const data = await response.json();
     return res.status(200).json(data);
   } catch (error) {
-    return res.status(500).json({ error: 'Error al conectar con Gemini API' });
+    return res.status(500).json({ error: 'Failed to communicate with Gemini API', details: error.message });
   }
 }
