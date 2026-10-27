@@ -4,6 +4,18 @@ body {
   color: #2b3445;
 }
 
+/* Contenedor que ancla las opciones de pestañas en la parte superior */
+.sticky-tabs-container {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  background-color: #f4f6f9;
+  padding: 12px 14px;
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+
 .card-kpi {
   border-radius: 12px;
   background: #ffffff;
