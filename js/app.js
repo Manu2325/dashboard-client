@@ -3,6 +3,9 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiCx1fmc9AFm
 let chartLobInstance = null;
 let chartOutcomesInstance = null;
 
+// Lista de agentes temporalmente inactivos/ocultos
+const EXCLUDED_AGENTS = ['SERGIO.GONZALEZ', 'SERGIO GONZALEZ'];
+
 document.addEventListener('DOMContentLoaded', () => {
   fetchDashboardData();
 });
@@ -199,7 +202,7 @@ function renderSummaryTable(grid, containerId) {
   container.innerHTML = html;
 }
 
-// Renderizado Agent Performance con formato condicional por LOB en subtablas
+// Renderizado Agent Performance con formato condicional y filtro de agentes excluidos
 function renderAgentPerformanceTable(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
@@ -208,11 +211,17 @@ function renderAgentPerformanceTable(grid, containerId) {
 
   let html = '';
   let currentAgent = '';
+  let isCurrentAgentExcluded = false;
   let leftRows = [];
   let rightRows = [];
 
   const flushAgentBlock = () => {
-    if (!currentAgent) return;
+    // Si no hay agente o está en la lista de excluidos, no se renderiza
+    if (!currentAgent || isCurrentAgentExcluded) {
+      leftRows = [];
+      rightRows = [];
+      return;
+    }
 
     html += `
       <div class="agent-title-badge mb-3">
@@ -302,8 +311,15 @@ function renderAgentPerformanceTable(grid, containerId) {
     if (agentTitleCandidate.toUpperCase().startsWith('AGENT PERFORMANCE:')) {
       flushAgentBlock();
       currentAgent = agentTitleCandidate.split('|')[0].replace('AGENT PERFORMANCE:', '').trim();
+      
+      // Evaluamos si el bloque pertenece a un agente excluido
+      const upperAgent = currentAgent.toUpperCase();
+      isCurrentAgentExcluded = EXCLUDED_AGENTS.some(exc => upperAgent.includes(exc));
       return;
     }
+
+    // Si el bloque actual está marcado como excluido, omitimos sus filas
+    if (isCurrentAgentExcluded) return;
 
     const colBText = (row[1] || '').toString().trim();
     if (colBText.toUpperCase().includes('LINE OF BUSINESS') || colBText.toUpperCase().includes('TOTAL CALLS')) {
@@ -334,7 +350,7 @@ function renderAgentPerformanceTable(grid, containerId) {
   container.innerHTML = html;
 }
 
-// Renderizado Agent Skills
+// Renderizado Agent Skills filtrando agentes excluidos
 function renderSkillsTable(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
@@ -351,6 +367,12 @@ function renderSkillsTable(grid, containerId) {
     const rawServices = row[1] ? row[1].toString().trim() : '';
 
     if (!agentName) return;
+
+    // Si el agente está en la lista de exclusión, no renderizamos su tarjeta de perfil
+    const upperAgent = agentName.toUpperCase();
+    if (EXCLUDED_AGENTS.some(exc => upperAgent.includes(exc))) {
+      return;
+    }
 
     const skillsList = rawServices.split(',').map(s => s.trim()).filter(s => s !== '');
 
