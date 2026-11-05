@@ -34,29 +34,29 @@
 
       <div class="container-fluid p-4">
         
-        <!-- KPI Cards Resumen Rápido -->
+        <!-- KPI Cards Resumen Rápido (En Tiempo Real) -->
         <div class="row g-3 mb-4" id="kpiContainer">
           <div class="col-md-3">
             <div class="card card-kpi border-0 shadow-sm p-3 border-start border-4 border-primary">
-              <span class="text-muted small fw-bold text-uppercase">Total Calls</span>
+              <span class="text-muted small fw-bold text-uppercase">Total Calls (Live)</span>
               <h3 class="fw-bold mb-0 text-dark" id="kpiTotalCalls">--</h3>
             </div>
           </div>
           <div class="col-md-3">
             <div class="card card-kpi border-0 shadow-sm p-3 border-start border-4 border-success">
-              <span class="text-muted small fw-bold text-uppercase">RPC Calls</span>
+              <span class="text-muted small fw-bold text-uppercase">RPC Calls (Live)</span>
               <h3 class="fw-bold mb-0 text-dark" id="kpiRpc">--</h3>
             </div>
           </div>
           <div class="col-md-3">
             <div class="card card-kpi border-0 shadow-sm p-3 border-start border-4 border-info">
-              <span class="text-muted small fw-bold text-uppercase">PTP Commitments</span>
+              <span class="text-muted small fw-bold text-uppercase">PTP Commitments (Live)</span>
               <h3 class="fw-bold mb-0 text-dark" id="kpiPtp">--</h3>
             </div>
           </div>
           <div class="col-md-3">
             <div class="card card-kpi border-0 shadow-sm p-3 border-start border-4 border-warning">
-              <span class="text-muted small fw-bold text-uppercase">Avg Conversion Rate</span>
+              <span class="text-muted small fw-bold text-uppercase">Avg Conversion (Live)</span>
               <h3 class="fw-bold mb-0 text-dark" id="kpiConversion">--</h3>
             </div>
           </div>
@@ -80,11 +80,17 @@
                 <i class="fa-solid fa-address-card me-1"></i> Agent Skills
               </button>
             </li>
+            <!-- NUEVA PESTAÑA HISTÓRICA 2026 -->
+            <li class="nav-item">
+              <button class="nav-link rounded-pill" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button">
+                <i class="fa-solid fa-calendar-days me-1"></i> Monthly 2026
+              </button>
+            </li>
           </ul>
         </div>
 
         <div class="tab-content">
-          <!-- Executive Summary Tab -->
+          <!-- Executive Summary Tab (Tiempo Real) -->
           <div class="tab-pane fade show active" id="summary">
             <div class="row mb-4">
               <div class="col-md-7">
@@ -128,6 +134,63 @@
               <div id="skillsTableContainer" class="table-responsive">Cargando datos...</div>
             </div>
           </div>
+
+          <!-- Pestaña Monthly 2026 (Histórico con Selector) -->
+          <div class="tab-pane fade" id="monthly">
+            <div class="card border-0 shadow-sm p-4 mb-4">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div>
+                  <h5 class="fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Historical Monthly Performance (2026)
+                  </h5>
+                  <p class="text-muted small mb-0">Select any closed month to analyze past portfolio outcomes and agent metrics.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <label for="monthlySelect" class="form-label fw-bold text-secondary mb-0 small text-uppercase">Month:</label>
+                  <select id="monthlySelect" class="form-select form-select-sm shadow-sm" style="width: 200px; font-weight: 600;">
+                    <option value="0" selected>October 2026</option>
+                    <!-- Puedes agregar los futuros meses con su gid correspondiente -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Mini KPI cards del mes histórico -->
+              <div class="row g-3 mb-4" id="monthlyKpiContainer">
+                <div class="col-md-3">
+                  <div class="card card-kpi border-0 shadow-sm p-3 border-start border-4 border-primary">
+                    <span class="text-muted small fw-bold text-uppercase">Month Total Calls</span>
+                    <h4 class="fw-bold mb-0 text-dark" id="monthKpiTotal">--</h4>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card card-kpi border-0 shadow-sm p-3 border-start border-4 border-success">
+                    <span class="text-muted small fw-bold text-uppercase">Month RPC Calls</span>
+                    <h4 class="fw-bold mb-0 text-dark" id="monthKpiRpc">--</h4>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card card-kpi border-0 shadow-sm p-3 border-start border-4 border-info">
+                    <span class="text-muted small fw-bold text-uppercase">Month PTP Calls</span>
+                    <h4 class="fw-bold mb-0 text-dark" id="monthKpiPtp">--</h4>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card card-kpi border-0 shadow-sm p-3 border-start border-4 border-warning">
+                    <span class="text-muted small fw-bold text-uppercase">Month Conversion</span>
+                    <h4 class="fw-bold mb-0 text-dark" id="monthKpiConv">--</h4>
+                  </div>
+                </div>
+              </div>
+
+              <div id="monthlyContentContainer" class="table-responsive">
+                <div class="text-center py-4 text-muted">
+                  <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                  Loading historical monthly data...
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>

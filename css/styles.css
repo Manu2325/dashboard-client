@@ -27,7 +27,7 @@ body {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06) !important;
 }
 
-.card-kpi h3 {
+.card-kpi h3, .card-kpi h4 {
   font-size: 1.85rem;
   font-weight: 800 !important;
   letter-spacing: -0.5px;
@@ -163,7 +163,6 @@ body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
-/* Efecto de elevación e iluminación al pasar el ratón sobre la tarjeta del agente */
 .skill-card:hover {
   transform: translateY(-4px) scale(1.01);
   box-shadow: 0 12px 24px rgba(13, 110, 253, 0.12) !important;
@@ -186,7 +185,6 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.04);
 }
 
-/* Efecto de relieve 3D y brillo cuando pasas el ratón DIRECTO sobre una Skill */
 .skill-badge:hover {
   background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
   color: #ffffff;
@@ -195,12 +193,10 @@ body {
   border-color: #0d6efd;
 }
 
-/* Colores dinámicos para LOBs específicas con forzado de prioridad */
-
 /* EQ_EARTHLINK -> Verde claro pastel */
 .row-eq-earthlink, 
 .row-eq-earthlink > td {
-  background-color: #d1e7dd !important; /* Verde pastel suave */
+  background-color: #d1e7dd !important;
   color: #0f5132 !important;
   font-weight: 600 !important;
 }
@@ -213,7 +209,7 @@ body {
 /* EARTHLINK / EARTHLINK (1st Party) -> Azul claro pastel */
 .row-earthlink, 
 .row-earthlink > td {
-  background-color: #cfe2ff !important; /* Azul pastel suave */
+  background-color: #cfe2ff !important;
   color: #084298 !important;
   font-weight: 600 !important;
 }

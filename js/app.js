@@ -1,5 +1,8 @@
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiCx1fmc9AFmcj7SXFQbbRF7I2avwEHWemtDuWQKwmw5zaQZI1LCm8uu6Qv811ldec/exec'; 
 
+// ID del Spreadsheet de 2026 con meses históricos
+const MONTHLY_SPREADSHEET_ID = '1HHRfE4ORSBftC9WLwwpnAPwEol71BvLawoySzMoMVLE';
+
 let chartLobInstance = null;
 let chartOutcomesInstance = null;
 
@@ -8,6 +11,7 @@ const EXCLUDED_AGENTS = ['SERGIO.GONZALEZ', 'SERGIO GONZALEZ'];
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchDashboardData();
+  initMonthlyTab();
 });
 
 async function fetchDashboardData() {
@@ -21,7 +25,7 @@ async function fetchDashboardData() {
     const data = await response.json();
     console.log("¡Datos en vivo recibidos!", data);
 
-    // 1. Renderizar pestaña Executive Summary con resueltos de color y formatos condicionales
+    // 1. Renderizar pestaña Executive Summary con colores y formatos condicionales
     renderSummaryTable(data.summaryData, 'summaryTableContainer');
     
     // 2. Renderizar pestaña Agent Performance con formatos condicionales por agente
@@ -30,7 +34,7 @@ async function fetchDashboardData() {
     // 3. Renderizar pestaña Skills
     renderSkillsTable(data.skillData, 'skillsTableContainer');
 
-    // Procesar métricas globales
+    // Procesar métricas globales en vivo
     processLiveMetrics(data.summaryData);
 
   } catch (error) {
@@ -40,15 +44,117 @@ async function fetchDashboardData() {
   }
 }
 
+// Inicializar y cargar datos históricos de 2026
+function initMonthlyTab() {
+  const select = document.getElementById('monthlySelect');
+  if (!select) return;
+
+  // Carga inicial (October 2026 - gid 0)
+  fetchMonthlySheetData(select.value);
+
+  select.addEventListener('change', (e) => {
+    fetchMonthlySheetData(e.target.value);
+  });
+}
+
+// Descarga y procesa el CSV del tab correspondiente del spreadsheet
+async function fetchMonthlySheetData(gid = '0') {
+  const container = document.getElementById('monthlyContentContainer');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="text-center py-4 text-muted">
+      <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+      Loading monthly data from 2026 archive...
+    </div>
+  `;
+
+  try {
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${MONTHLY_SPREADSHEET_ID}/export?format=csv&gid=${gid}`;
+    const response = await fetch(csvUrl);
+    
+    if (!response.ok) throw new Error(`Failed to load sheet: ${response.status}`);
+    
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    renderMonthlyTables(rows, 'monthlyContentContainer');
+    extractMonthlyKpis(rows);
+
+  } catch (err) {
+    console.error("Error al cargar datos mensuales:", err);
+    container.innerHTML = `
+      <div class="alert alert-warning">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+        Could not load monthly data automatically. Please ensure the Google Sheet is shared with "Anyone with the link can view".
+        <br><small class="text-muted">${err.message}</small>
+      </div>
+    `;
+  }
+}
+
+// Parser simple y robusto de CSV respetando comillas y comas internas
+function parseCSV(text) {
+  const lines = text.split(/\r\n|\n/);
+  const result = [];
+  for (let line of lines) {
+    if (!line.trim()) continue;
+    let row = [];
+    let insideQuotes = false;
+    let entry = '';
+    for (let i = 0; i < line.length; i++) {
+      let char = line[i];
+      if (char === '"') {
+        insideQuotes = !insideQuotes;
+      } else if (char === ',' && !insideQuotes) {
+        row.push(entry.trim());
+        entry = '';
+      } else {
+        entry += char;
+      }
+    }
+    row.push(entry.trim());
+    result.push(row);
+  }
+  return result;
+}
+
+// Extraer KPIs del mes seleccionado para las tarjetas superiores
+function extractMonthlyKpis(rows) {
+  for (let row of rows) {
+    const firstCell = (row[0] || '').toString().trim().toLowerCase();
+    if (firstCell === 'total portfolio') {
+      const totalCalls = row[1] || '--';
+      const rpcCalls = row[4] || '--';
+      const ptpCalls = row[6] || '--';
+      const convRate = row[7] || '--';
+
+      document.getElementById('monthKpiTotal').innerText = totalCalls;
+      document.getElementById('monthKpiRpc').innerText = rpcCalls;
+      document.getElementById('monthKpiPtp').innerText = ptpCalls;
+      document.getElementById('monthKpiConv').innerText = convRate;
+      return;
+    }
+  }
+}
+
+// Renderizar las tablas del mes histórico aplicando formatos condicionales y filtrando agentes excluidos
+function renderMonthlyTables(grid, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container || !grid || grid.length === 0) return;
+
+  renderSummaryTable(grid, containerId);
+}
+
 // Función auxiliar para obtener la clase CSS según el nombre de la LOB
 function getLobRowClass(lobName) {
   if (!lobName) return '';
   const text = lobName.toString().toUpperCase().trim();
   
   if (text.includes('EQ_EARTHLINK') || text.includes('EQ EARTHLINK')) {
-    return 'row-eq-earthlink'; // Verde Claro
+    return 'row-eq-earthlink';
   } else if (text.includes('EARTHLINK')) {
-    return 'row-earthlink';    // Azul Claro
+    return 'row-earthlink';
   }
   return '';
 }
@@ -77,15 +183,11 @@ function formatConversionPercent(lobName, valStr) {
   const isCrc = lob === 'CRC';
 
   let colorClass = '';
-  
   if (isCrc) {
-    // Reglas para CRC: > 50% verde, 20-49% amarillo, 0-19% rojo
     if (num >= 50) colorClass = 'badge-kpi-green';
     else if (num >= 20) colorClass = 'badge-kpi-yellow';
     else colorClass = 'badge-kpi-red';
   } else {
-    // Reglas para CRCC, EQ_EARTHLINK, EARTHLINK, OPTIMUM, YENDO, Agentes
-    // > 40% verde, 20-39% amarillo, 0-19% rojo
     if (num >= 40) colorClass = 'badge-kpi-green';
     else if (num >= 20) colorClass = 'badge-kpi-yellow';
     else colorClass = 'badge-kpi-red';
@@ -94,7 +196,7 @@ function formatConversionPercent(lobName, valStr) {
   return `<span class="badge-kpi ${colorClass}">${valStr}</span>`;
 }
 
-// Renderizado Executive Summary con colores dinámicos y formato condicional
+// Renderizado de Tablas Summary con colores dinámicos y formatos condicionales
 function renderSummaryTable(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
@@ -116,10 +218,17 @@ function renderSummaryTable(grid, containerId) {
 
     const mainTitleCell = cleanRow[0].toString().trim();
 
+    // Filtro si es agente excluido
+    const upperTitle = mainTitleCell.toUpperCase();
+    if (EXCLUDED_AGENTS.some(exc => upperTitle.includes(exc))) {
+      return;
+    }
+
     // 1. BANNERS DE SECCIÓN
     const isSectionBanner = mainTitleCell.toUpperCase().includes('TOTAL PORTFOLIO SUMMARY') || 
                             mainTitleCell.toUpperCase().includes('TOTAL PORTFOLIO:') ||
-                            mainTitleCell.toUpperCase().includes('AGENT PERFORMANCE PORTFOLIO SUMMARY');
+                            mainTitleCell.toUpperCase().includes('AGENT PERFORMANCE PORTFOLIO SUMMARY') ||
+                            mainTitleCell.toUpperCase().startsWith('AGENT PERFORMANCE:');
 
     if (isSectionBanner) {
       if (inTable) {
@@ -179,11 +288,10 @@ function renderSummaryTable(grid, containerId) {
         if (cell !== undefined) {
           let cellValue = cell !== null ? cell : '';
           
-          // Aplicar formato condicional solo en columnas RPC % (índice 5) y Conversion % (índice 7)
           if (!isExactTotalRow) {
-            if (idx === 5) { // RPC %
+            if (idx === 5) {
               cellValue = formatRpcPercent(cellValue);
-            } else if (idx === 7) { // Conversion Rate %
+            } else if (idx === 7) {
               cellValue = formatConversionPercent(mainTitleCell, cellValue);
             }
           }
@@ -202,7 +310,7 @@ function renderSummaryTable(grid, containerId) {
   container.innerHTML = html;
 }
 
-// Renderizado Agent Performance con formato condicional y filtro de agentes excluidos
+// Renderizado Agent Performance con filtro de agentes excluidos
 function renderAgentPerformanceTable(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
@@ -216,7 +324,6 @@ function renderAgentPerformanceTable(grid, containerId) {
   let rightRows = [];
 
   const flushAgentBlock = () => {
-    // Si no hay agente o está en la lista de excluidos, no se renderiza
     if (!currentAgent || isCurrentAgentExcluded) {
       leftRows = [];
       rightRows = [];
@@ -249,13 +356,9 @@ function renderAgentPerformanceTable(grid, containerId) {
       for (let i = 0; i < 9; i++) {
         let val = r[i] !== undefined && r[i] !== null ? r[i] : '';
 
-        // Formatos condicionales para subtabla izquierda
         if (!isTotal) {
-          if (i === 5) { // RPC %
-            val = formatRpcPercent(val);
-          } else if (i === 7) { // Conversion Rate %
-            val = formatConversionPercent(lobName, val);
-          }
+          if (i === 5) val = formatRpcPercent(val);
+          else if (i === 7) val = formatConversionPercent(lobName, val);
         }
 
         html += `<td>${val}</td>`;
@@ -312,13 +415,11 @@ function renderAgentPerformanceTable(grid, containerId) {
       flushAgentBlock();
       currentAgent = agentTitleCandidate.split('|')[0].replace('AGENT PERFORMANCE:', '').trim();
       
-      // Evaluamos si el bloque pertenece a un agente excluido
       const upperAgent = currentAgent.toUpperCase();
       isCurrentAgentExcluded = EXCLUDED_AGENTS.some(exc => upperAgent.includes(exc));
       return;
     }
 
-    // Si el bloque actual está marcado como excluido, omitimos sus filas
     if (isCurrentAgentExcluded) return;
 
     const colBText = (row[1] || '').toString().trim();
@@ -326,7 +427,6 @@ function renderAgentPerformanceTable(grid, containerId) {
       return;
     }
 
-    // LADO IZQUIERDO: Columnas B a J (Índices 1 a 9)
     const rawLeft = row.slice(1, 10);
     const leftHasData = rawLeft.some(c => c !== "" && c !== null);
     const leftTitle = (rawLeft[0] || '').toString().trim();
@@ -338,7 +438,6 @@ function renderAgentPerformanceTable(grid, containerId) {
       }
     }
 
-    // LADO DERECHO: Columnas K a N (Índice 10 en adelante)
     const rawRight = row.slice(10).filter(c => c !== "" && c !== null);
     if (rawRight.length >= 2) {
       rightRows.push(rawRight);
@@ -368,7 +467,6 @@ function renderSkillsTable(grid, containerId) {
 
     if (!agentName) return;
 
-    // Si el agente está en la lista de exclusión, no renderizamos su tarjeta de perfil
     const upperAgent = agentName.toUpperCase();
     if (EXCLUDED_AGENTS.some(exc => upperAgent.includes(exc))) {
       return;
