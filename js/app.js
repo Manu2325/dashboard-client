@@ -44,7 +44,7 @@ async function fetchDashboardData() {
   }
 }
 
-// Inicializar y cargar datos históricos de 2026
+// Inicializar selector de la pestaña mensual
 function initMonthlyTab() {
   const select = document.getElementById('monthlySelect');
   if (!select) return;
@@ -94,7 +94,7 @@ async function fetchMonthlySheetData(gid = '0') {
   }
 }
 
-// Parser simple y robusto de CSV respetando comillas y comas internas
+// Parser CSV robusto respetando comillas y delimitadores
 function parseCSV(text) {
   const lines = text.split(/\r\n|\n/);
   const result = [];
@@ -130,21 +130,59 @@ function extractMonthlyKpis(rows) {
       const ptpCalls = row[6] || '--';
       const convRate = row[7] || '--';
 
-      document.getElementById('monthKpiTotal').innerText = totalCalls;
-      document.getElementById('monthKpiRpc').innerText = rpcCalls;
-      document.getElementById('monthKpiPtp').innerText = ptpCalls;
-      document.getElementById('monthKpiConv').innerText = convRate;
+      const elTotal = document.getElementById('monthKpiTotal');
+      const elRpc = document.getElementById('monthKpiRpc');
+      const elPtp = document.getElementById('monthKpiPtp');
+      const elConv = document.getElementById('monthKpiConv');
+
+      if (elTotal) elTotal.innerText = totalCalls;
+      if (elRpc) elRpc.innerText = rpcCalls;
+      if (elPtp) elPtp.innerText = ptpCalls;
+      if (elConv) elConv.innerText = convRate;
       return;
     }
   }
 }
 
-// Renderizar las tablas del mes histórico aplicando formatos condicionales y filtrando agentes excluidos
+// Renderizado Inteligente del Mes Histórico: divide en Resumen de Cartera y Desglose por Agente
 function renderMonthlyTables(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
 
-  renderSummaryTable(grid, containerId);
+  const cleanGrid = grid.filter(row => row.some(cell => cell !== "" && cell !== null));
+
+  // Detectamos dónde comienzan los bloques individuales de Agent Performance
+  let splitIndex = -1;
+  for (let i = 0; i < cleanGrid.length; i++) {
+    const candidate = (cleanGrid[i][0] || cleanGrid[i][1] || '').toString().trim().toUpperCase();
+    if (candidate.startsWith('AGENT PERFORMANCE:') && !candidate.includes('PORTFOLIO SUMMARY')) {
+      splitIndex = i;
+      break;
+    }
+  }
+
+  // Si existen bloques de agentes individuales, renderizamos ambas secciones
+  if (splitIndex !== -1) {
+    const summaryRows = cleanGrid.slice(0, splitIndex);
+    const agentRows = cleanGrid.slice(splitIndex);
+
+    container.innerHTML = `
+      <div id="monthlySummarySubContainer"></div>
+      <div class="mt-4 pt-3 border-top">
+        <h5 class="fw-bold text-dark mb-3">
+          <i class="fa-solid fa-user-group me-2 text-primary"></i>Agent Breakdown (Monthly Archive)
+        </h5>
+        <div id="monthlyAgentSubContainer"></div>
+      </div>
+    `;
+
+    renderSummaryTable(summaryRows, 'monthlySummarySubContainer');
+    renderAgentPerformanceTable(agentRows, 'monthlyAgentSubContainer');
+  } else {
+    // Si la hoja solo contiene tablas de resumen
+    container.innerHTML = `<div id="monthlySummarySubContainer"></div>`;
+    renderSummaryTable(cleanGrid, 'monthlySummarySubContainer');
+  }
 }
 
 // Función auxiliar para obtener la clase CSS según el nombre de la LOB
@@ -228,8 +266,7 @@ function renderSummaryTable(grid, containerId) {
     // 1. BANNERS DE SECCIÓN
     const isSectionBanner = mainTitleCell.toUpperCase().includes('TOTAL PORTFOLIO SUMMARY') || 
                             mainTitleCell.toUpperCase().includes('TOTAL PORTFOLIO:') ||
-                            mainTitleCell.toUpperCase().includes('AGENT PERFORMANCE PORTFOLIO SUMMARY') ||
-                            mainTitleCell.toUpperCase().startsWith('AGENT PERFORMANCE:');
+                            mainTitleCell.toUpperCase().includes('AGENT PERFORMANCE PORTFOLIO SUMMARY');
 
     if (isSectionBanner) {
       if (inTable) {
@@ -311,7 +348,7 @@ function renderSummaryTable(grid, containerId) {
   container.innerHTML = html;
 }
 
-// Renderizado Agent Performance con filtro de agentes excluidos
+// Renderizado Agent Performance en formato 2 columnas con filtro de exclusión
 function renderAgentPerformanceTable(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
@@ -412,7 +449,7 @@ function renderAgentPerformanceTable(grid, containerId) {
   cleanGrid.forEach((row) => {
     const agentTitleCandidate = (row[0] || row[1] || '').toString().trim();
 
-    if (agentTitleCandidate.toUpperCase().startsWith('AGENT PERFORMANCE:')) {
+    if (agentTitleCandidate.toUpperCase().startsWith('AGENT PERFORMANCE:') && !agentTitleCandidate.toUpperCase().includes('PORTFOLIO SUMMARY')) {
       flushAgentBlock();
       currentAgent = agentTitleCandidate.split('|')[0].replace('AGENT PERFORMANCE:', '').trim();
       
@@ -428,6 +465,7 @@ function renderAgentPerformanceTable(grid, containerId) {
       return;
     }
 
+    // LADO IZQUIERDO: Columnas B a J (Índices 1 a 9)
     const rawLeft = row.slice(1, 10);
     const leftHasData = rawLeft.some(c => c !== "" && c !== null);
     const leftTitle = (rawLeft[0] || '').toString().trim();
@@ -439,6 +477,7 @@ function renderAgentPerformanceTable(grid, containerId) {
       }
     }
 
+    // LADO DERECHO: Columnas K a N (Índice 10 en adelante)
     const rawRight = row.slice(10).filter(c => c !== "" && c !== null);
     if (rawRight.length >= 2) {
       rightRows.push(rawRight);
@@ -572,7 +611,7 @@ function processLiveMetrics(summaryData) {
     convPct = parseFloat((totalPortfolioRow[7] || '51.5').toString().replace('%', '')) || 51.5;
   }
 
-  renderCharts(lobNames, totalCallsList, ptpCallsList, [nonRpcPct, rpcPct, convPct]);
+  renderCharts(lobLabels, totalCallsList, ptpCallsList, [nonRpcPct, rpcPct, convPct]);
 }
 
 function renderCharts(lobLabels, totalCallsData, ptpCallsData, doughnutData) {
