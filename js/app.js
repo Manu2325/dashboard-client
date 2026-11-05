@@ -57,7 +57,7 @@ function initMonthlyTab() {
   });
 }
 
-// Descarga y procesa el CSV del tab correspondiente del spreadsheet
+// Descarga y procesa el CSV del tab correspondiente usando el endpoint interno sin CORS
 async function fetchMonthlySheetData(gid = '0') {
   const container = document.getElementById('monthlyContentContainer');
   if (!container) return;
@@ -70,10 +70,12 @@ async function fetchMonthlySheetData(gid = '0') {
   `;
 
   try {
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${MONTHLY_SPREADSHEET_ID}/export?format=csv&gid=${gid}`;
-    const response = await fetch(csvUrl);
+    const response = await fetch(`/api/monthly?gid=${gid}`);
     
-    if (!response.ok) throw new Error(`Failed to load sheet: ${response.status}`);
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      throw new Error(errJson.error || `HTTP Status: ${response.status}`);
+    }
     
     const csvText = await response.text();
     const rows = parseCSV(csvText);
@@ -86,8 +88,7 @@ async function fetchMonthlySheetData(gid = '0') {
     container.innerHTML = `
       <div class="alert alert-warning">
         <i class="fa-solid fa-triangle-exclamation me-2"></i>
-        Could not load monthly data automatically. Please ensure the Google Sheet is shared with "Anyone with the link can view".
-        <br><small class="text-muted">${err.message}</small>
+        Could not load monthly data automatically. ${err.message}
       </div>
     `;
   }
