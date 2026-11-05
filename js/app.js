@@ -161,7 +161,6 @@ function renderMonthlyTables(grid, containerId) {
     }
   }
 
-  // Si existen bloques de agentes individuales, renderizamos ambas secciones
   if (splitIndex !== -1) {
     const summaryRows = cleanGrid.slice(0, splitIndex);
     const agentRows = cleanGrid.slice(splitIndex);
@@ -179,7 +178,6 @@ function renderMonthlyTables(grid, containerId) {
     renderSummaryTable(summaryRows, 'monthlySummarySubContainer');
     renderAgentPerformanceTable(agentRows, 'monthlyAgentSubContainer');
   } else {
-    // Si la hoja solo contiene tablas de resumen
     container.innerHTML = `<div id="monthlySummarySubContainer"></div>`;
     renderSummaryTable(cleanGrid, 'monthlySummarySubContainer');
   }
@@ -611,7 +609,8 @@ function processLiveMetrics(summaryData) {
     convPct = parseFloat((totalPortfolioRow[7] || '51.5').toString().replace('%', '')) || 51.5;
   }
 
-  renderCharts(lobLabels, totalCallsList, ptpCallsList, [nonRpcPct, rpcPct, convPct]);
+  // Corregido: se pasa lobNames en lugar de lobLabels
+  renderCharts(lobNames, totalCallsList, ptpCallsList, [nonRpcPct, rpcPct, convPct]);
 }
 
 function renderCharts(lobLabels, totalCallsData, ptpCallsData, doughnutData) {
