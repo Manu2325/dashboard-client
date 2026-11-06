@@ -346,7 +346,7 @@ function renderSummaryTable(grid, containerId) {
   container.innerHTML = html;
 }
 
-// Renderizado Agent Performance en formato 2 columnas con filtro de exclusión
+// Renderizado Agent Performance con detección automática de columnas
 function renderAgentPerformanceTable(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
@@ -458,13 +458,19 @@ function renderAgentPerformanceTable(grid, containerId) {
 
     if (isCurrentAgentExcluded) return;
 
-    const colBText = (row[1] || '').toString().trim();
-    if (colBText.toUpperCase().includes('LINE OF BUSINESS') || colBText.toUpperCase().includes('TOTAL CALLS')) {
+    // Saltar encabezados de tabla de agentes
+    const rowFullText = row.join(' ').toUpperCase();
+    if (rowFullText.includes('TOTAL CALLS') && rowFullText.includes('NON-RPC')) {
       return;
     }
 
-    // LADO IZQUIERDO: Columnas B a J (Índices 1 a 9)
-    const rawLeft = row.slice(1, 10);
+    // DETECCIÓN INTELIGENTE DE COLUMNAS (OFFSET):
+    // Si la columna 0 está vacía, iniciamos en 1 (Google Apps Script).
+    // Si la columna 0 tiene datos (como en el CSV mensual), iniciamos en 0.
+    const offset = (!row[0] || row[0].toString().trim() === '') ? 1 : 0;
+
+    // LADO IZQUIERDO: 9 columnas (LOB hasta OTHER)
+    const rawLeft = row.slice(offset, offset + 9);
     const leftHasData = rawLeft.some(c => c !== "" && c !== null);
     const leftTitle = (rawLeft[0] || '').toString().trim();
 
@@ -475,8 +481,8 @@ function renderAgentPerformanceTable(grid, containerId) {
       }
     }
 
-    // LADO DERECHO: Columnas K a N (Índice 10 en adelante)
-    const rawRight = row.slice(10).filter(c => c !== "" && c !== null);
+    // LADO DERECHO: Columnas restantes a partir de offset + 9
+    const rawRight = row.slice(offset + 9).filter(c => c !== "" && c !== null);
     if (rawRight.length >= 2) {
       rightRows.push(rawRight);
     }
@@ -609,7 +615,6 @@ function processLiveMetrics(summaryData) {
     convPct = parseFloat((totalPortfolioRow[7] || '51.5').toString().replace('%', '')) || 51.5;
   }
 
-  // Corregido: se pasa lobNames en lugar de lobLabels
   renderCharts(lobNames, totalCallsList, ptpCallsList, [nonRpcPct, rpcPct, convPct]);
 }
 
