@@ -346,7 +346,7 @@ function renderSummaryTable(grid, containerId) {
   container.innerHTML = html;
 }
 
-// Renderizado Agent Performance con detección automática de columnas
+// Renderizado Agent Performance con división exacta entre Columnas I y J
 function renderAgentPerformanceTable(grid, containerId) {
   const container = document.getElementById(containerId);
   if (!container || !grid || grid.length === 0) return;
@@ -358,11 +358,14 @@ function renderAgentPerformanceTable(grid, containerId) {
   let isCurrentAgentExcluded = false;
   let leftRows = [];
   let rightRows = [];
+  let lastRightLob = '';
+  let currentOffset = 0;
 
   const flushAgentBlock = () => {
     if (!currentAgent || isCurrentAgentExcluded) {
       leftRows = [];
       rightRows = [];
+      lastRightLob = '';
       return;
     }
 
@@ -371,7 +374,7 @@ function renderAgentPerformanceTable(grid, containerId) {
         <i class="fa-solid fa-user-check me-2 fs-5"></i> ${currentAgent}
       </div>
       <div class="row g-3 mb-4">
-        <!-- Tabla Izquierda: Métricas por LOB -->
+        <!-- Tabla Izquierda: Métricas por LOB (Columnas A hasta I) -->
         <div class="col-lg-7">
           <div class="table-custom-wrapper table-responsive">
             <table class="table table-hover align-middle table-custom mb-0">
@@ -408,7 +411,7 @@ function renderAgentPerformanceTable(grid, containerId) {
           </div>
         </div>
 
-        <!-- Tabla Derecha: Distribución de Códigos PTP -->
+        <!-- Tabla Derecha: Distribución de Códigos PTP (Columnas J hasta M) -->
         <div class="col-lg-5">
           <div class="table-custom-wrapper table-responsive">
             <table class="table table-hover align-middle table-custom mb-0">
@@ -425,7 +428,7 @@ function renderAgentPerformanceTable(grid, containerId) {
       const rowClass = getLobRowClass(lobName);
 
       html += `<tr class="${rowClass}">`;
-      for (let i = 0; i < r.length; i++) {
+      for (let i = 0; i < 4; i++) {
         const val = r[i] !== undefined && r[i] !== null ? r[i] : '';
         html += `<td>${val}</td>`;
       }
@@ -442,15 +445,25 @@ function renderAgentPerformanceTable(grid, containerId) {
 
     leftRows = [];
     rightRows = [];
+    lastRightLob = '';
   };
 
   cleanGrid.forEach((row) => {
-    const agentTitleCandidate = (row[0] || row[1] || '').toString().trim();
+    const rawCol0 = (row[0] || '').toString().trim();
+    const rawCol1 = (row[1] || '').toString().trim();
 
-    if (agentTitleCandidate.toUpperCase().startsWith('AGENT PERFORMANCE:') && !agentTitleCandidate.toUpperCase().includes('PORTFOLIO SUMMARY')) {
+    // Detección del banner de agente y su offset para todo el bloque
+    if (rawCol0.toUpperCase().startsWith('AGENT PERFORMANCE:') && !rawCol0.toUpperCase().includes('PORTFOLIO SUMMARY')) {
       flushAgentBlock();
-      currentAgent = agentTitleCandidate.split('|')[0].replace('AGENT PERFORMANCE:', '').trim();
-      
+      currentOffset = 0;
+      currentAgent = rawCol0.split('|')[0].replace('AGENT PERFORMANCE:', '').trim();
+      const upperAgent = currentAgent.toUpperCase();
+      isCurrentAgentExcluded = EXCLUDED_AGENTS.some(exc => upperAgent.includes(exc));
+      return;
+    } else if (rawCol1.toUpperCase().startsWith('AGENT PERFORMANCE:') && !rawCol1.toUpperCase().includes('PORTFOLIO SUMMARY')) {
+      flushAgentBlock();
+      currentOffset = 1;
+      currentAgent = rawCol1.split('|')[0].replace('AGENT PERFORMANCE:', '').trim();
       const upperAgent = currentAgent.toUpperCase();
       isCurrentAgentExcluded = EXCLUDED_AGENTS.some(exc => upperAgent.includes(exc));
       return;
@@ -464,27 +477,34 @@ function renderAgentPerformanceTable(grid, containerId) {
       return;
     }
 
-    // DETECCIÓN INTELIGENTE DE COLUMNAS (OFFSET):
-    // Si la columna 0 está vacía, iniciamos en 1 (Google Apps Script).
-    // Si la columna 0 tiene datos (como en el CSV mensual), iniciamos en 0.
-    const offset = (!row[0] || row[0].toString().trim() === '') ? 1 : 0;
-
-    // LADO IZQUIERDO: 9 columnas (LOB hasta OTHER)
-    const rawLeft = row.slice(offset, offset + 9);
-    const leftHasData = rawLeft.some(c => c !== "" && c !== null);
+    // 1. LADO IZQUIERDO: Columnas A hasta I (exactamente 9 columnas)
+    const rawLeft = row.slice(currentOffset, currentOffset + 9);
     const leftTitle = (rawLeft[0] || '').toString().trim();
+    const leftHasData = rawLeft.some(c => c !== "" && c !== null);
 
-    if (leftHasData && leftTitle !== "" && !leftTitle.toUpperCase().includes('AGENT PERFORMANCE')) {
+    if (leftHasData && leftTitle !== "" && !leftTitle.toUpperCase().includes('AGENT PERFORMANCE') && !leftTitle.toUpperCase().includes('LINE OF BUSINESS')) {
       const alreadyHasTotal = leftRows.some(r => (r[0] || '').toString().toLowerCase().includes('total'));
       if (!alreadyHasTotal) {
         leftRows.push(rawLeft);
       }
     }
 
-    // LADO DERECHO: Columnas restantes a partir de offset + 9
-    const rawRight = row.slice(offset + 9).filter(c => c !== "" && c !== null);
-    if (rawRight.length >= 2) {
-      rightRows.push(rawRight);
+    // 2. LADO DERECHO: Columnas J hasta M (exactamente 4 columnas)
+    // Columna J (LOB), K (PTP Code Name), L (PTP Calls), M (% of LOB PTP)
+    const rLobRaw = (row[currentOffset + 9] || '').toString().trim();
+    const rPtpName = (row[currentOffset + 10] || '').toString().trim();
+    const rPtpCalls = (row[currentOffset + 11] || '').toString().trim();
+    const rPtpPct = (row[currentOffset + 12] || '').toString().trim();
+
+    // Si la celda de LOB tiene texto, la actualizamos; si viene vacía para agrupar códigos, usamos la última
+    if (rLobRaw !== '') {
+      lastRightLob = rLobRaw;
+    }
+    const rLob = rLobRaw || lastRightLob;
+
+    // Solo agregamos la fila si tiene nombre de código PTP válido
+    if (rPtpName !== '' && !rPtpName.toUpperCase().includes('PTP CODE NAME')) {
+      rightRows.push([rLob, rPtpName, rPtpCalls, rPtpPct]);
     }
   });
 
